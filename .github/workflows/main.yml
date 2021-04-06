@@ -24,3 +24,5 @@ jobs:
 
       - name: Check Building Image
         run: docker build .
+
+      # TODO: self-check

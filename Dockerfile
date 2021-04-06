@@ -1,12 +1,15 @@
-FROM python:3.9-alpine
+FROM python:3.9
+
+# lint it:
+# $ docker run --rm -i hadolint/hadolint < Dockerfile
 
 # hadolint ignore=DL3018
-RUN apk update && apk --no-cache add git gcc g++ curl python3-dev make automake
+RUN apt-get update -y && apt-get install -y --no-install-recommends git gcc g++ curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # download fasttext pretrained model
 VOLUME ["/fasttext"]
