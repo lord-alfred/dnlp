@@ -1,6 +1,7 @@
 FROM python:3.9-alpine
 
-RUN apk update && apk add git gcc g++ curl python3-dev make automake
+# hadolint ignore=DL3018
+RUN apk update && apk --no-cache add git gcc g++ curl python3-dev make automake
 
 WORKDIR /app
 
@@ -19,4 +20,4 @@ RUN python -c "import nltk; nltk.download('punkt')"
 COPY . /app
 RUN pip install -e .
 
-CMD dnlp
+CMD ["dnlp"]

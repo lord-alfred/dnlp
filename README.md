@@ -12,10 +12,6 @@
 
 Примеры ниже для Ubuntu, установка под привелигерованным пользователем (root).
 
-За основу взято:
-1. https://docs.docker.com/engine/install/ubuntu/
-2. https://docs.docker.com/compose/install/
-
 Установка docker:
 ```shell script
 apt-get remove docker docker-engine docker.io containerd runc
@@ -32,6 +28,10 @@ apt-get install docker-ce docker-ce-cli containerd.io git
 curl -L "https://github.com/docker/compose/releases/download/1.28.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 ```
+
+Подробная документация:
+1. https://docs.docker.com/engine/install/ubuntu/
+2. https://docs.docker.com/compose/install/
 
 ## Запуск dNLP
 
@@ -85,7 +85,7 @@ API Endpoint для определение языка текста поддер�
 ```
 
 API Endpoint для разделения текста на предложения поддерживает следующие входные параметры:
-- `text` – строка с текстом, которую нужно разбить на предложения.
+- `text` – строка с текстом, которую нужно разбить на предложения;
 - `lang` – код язык текста. По дефолту: `en`.
 
 Поддерживаемые языки для токенизации:
