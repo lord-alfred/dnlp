@@ -1,0 +1,15 @@
+version: '3.7'
+
+services:
+  dnlp:
+    restart: always
+    build: .
+    ports:
+      - 9090:9090
+    volumes:
+      - fasttext:/fasttext
+      - nltk_data:/root/nltk_data
+
+volumes:
+    fasttext:
+    nltk_data:

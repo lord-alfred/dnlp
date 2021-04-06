@@ -1,0 +1,26 @@
+name: Push to Main
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/main.yml"
+      - "Dockerfile"
+      - "src/**"
+      - "requirements.txt"
+      - "setup.py"
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run Linter
+        uses: brpaz/hadolint-action@v1.1.0
+        with:
+          dockerfile: "./Dockerfile"
+
+      - name: Check Building Image
+        run: docker build .

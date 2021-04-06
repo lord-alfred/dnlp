@@ -1,0 +1,5 @@
+aiohttp==3.7.4
+-e git+https://github.com/facebookresearch/fastText.git@9ef22d#egg=fastText
+ftfy==5.9
+unicodedata2==13.0.0.post2
+nltk==3.5
