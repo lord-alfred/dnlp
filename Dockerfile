@@ -3,7 +3,7 @@ FROM python:3.9
 # lint it:
 # $ docker run --rm -i hadolint/hadolint < Dockerfile
 
-# hadolint ignore=DL3018
+# hadolint ignore=DL3008
 RUN apt-get update -y && apt-get install -y --no-install-recommends git gcc g++ curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
