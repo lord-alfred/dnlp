@@ -22,6 +22,6 @@ VOLUME ["/fasttext"]
 VOLUME ["/root/nltk_data"]
 
 COPY . /app
-RUN pip install -e .
+RUN pip install --no-cache-dir -e .
 
 CMD ["dnlp"]

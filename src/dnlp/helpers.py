@@ -14,7 +14,7 @@ def sync(func):
 def abort(error_text: str):
     return json_response(
         {
-            'error': error_text
+            'error': error_text,
         },
         status=400,
     )

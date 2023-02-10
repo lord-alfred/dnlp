@@ -25,14 +25,14 @@ SENT_TOKENIZER = {}
 
 # trafilatura config
 TRAFILATURA_CONFIG = use_config()
-TRAFILATURA_CONFIG.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
+TRAFILATURA_CONFIG.set('DEFAULT', 'EXTRACTION_TIMEOUT', '0')
 
 
 async def tokenize_sentences(request):
     post_data = await request.post()
     param_text = post_data.get('text', '')
 
-    param_text = fix_bad_unicode(param_text, normalization="NFC")
+    param_text = fix_bad_unicode(param_text, normalization='NFC')
     param_text = normalize_whitespace(param_text)
     param_text = param_text.strip()
 
