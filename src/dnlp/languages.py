@@ -201,6 +201,7 @@ PUNKT_LANGUAGES = {
     'de': 'german',
     'el': 'greek',
     'it': 'italian',
+    'ml': 'malayalam',
     'no': 'norwegian',
     'pl': 'polish',
     'pt': 'portuguese',

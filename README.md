@@ -10,7 +10,7 @@
 
 ## Установка Docker
 
-Примеры ниже для Ubuntu, установка под привелигерованным пользователем (root).
+Примеры ниже для Ubuntu, установка под привилегированным пользователем (root).
 
 Установка docker:
 ```shell script
@@ -35,7 +35,7 @@ chmod +x /usr/local/bin/docker-compose
 
 ## Запуск dNLP
 
-Вначале склонируем репу:
+Вначале клонируем репу:
 ```shell script
 git clone https://github.com/lord-alfred/dnlp.git
 ```
@@ -53,8 +53,11 @@ docker-compose up --build -d
 # проверка определения языка:
 curl -v -XPOST -d 'text=some+useful+info' http://127.0.0.1:9090/detect-language
 
-# провера токенизации:
+# проверка токенизации:
 curl -v -XPOST -d 'text=Test+sent%3F+Don%27t+or+ms.+Not%21+Yes%2C+of+course.+Maybe+mr.Jeck+and+band.&lang=en' http://127.0.0.1:9090/tokenize-sentences
+
+# получение текста из html документа:
+curl -v XPOST -d 'html=%3Chtml%3E%3Cbody%3E%3Ch1%3Etest%3C%2Fh1%3E%3Cp%3Ethis%20is%20test%3C%2Fp%3E%3C%2Fbody%3E%3C%2Fhtml%3E' http://127.0.0.1:9090/extract
 ```
 
 Для проверки с другого сервера – нужно поменять IP адрес и убедиться что во встроенном фаерволле не закрыт порт `9090`.

@@ -2,13 +2,16 @@ import asyncio
 import os
 
 from aiohttp.web import json_response
+from aiohttp.web_response import Response
 from fasttext import load_model as ft_load_model
 from nltk.data import load as nltk_load
+from trafilatura.core import extract as trafilatura_extract
+from trafilatura.settings import use_config
 
 from dnlp.helpers import abort
 from dnlp.languages import PUNKT_LANGUAGES
 from dnlp.postprocess import remap_prediction
-from dnlp.preprocess import (fix_bad_unicode, normalize_whitespace, preprocess_text)
+from dnlp.preprocess import fix_bad_unicode, normalize_html, normalize_whitespace, preprocess_text
 
 
 # fastText
@@ -19,6 +22,10 @@ FT_MODEL = ft_load_model(MODEL_PATH)
 
 # nltk punkt
 SENT_TOKENIZER = {}
+
+# trafilatura config
+TRAFILATURA_CONFIG = use_config()
+TRAFILATURA_CONFIG.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
 
 
 async def tokenize_sentences(request):
@@ -83,3 +90,29 @@ async def detect_language(request):
     return json_response(
         remap_prediction(prediction)
     )
+
+
+async def extract(request):
+    post_data = await request.post()
+    param_html = post_data.get('html', '')
+
+    if not param_html:
+        return abort('empty "html" parameter')
+
+    param_html = normalize_html(param_html)
+
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        executor=None,
+        func=lambda: trafilatura_extract(
+            param_html,
+            favor_precision=True,
+            include_comments=False,
+            config=TRAFILATURA_CONFIG,
+        ),
+    )
+
+    if not result:
+        return abort('extract error')
+
+    return Response(body=result, content_type='text/plain')

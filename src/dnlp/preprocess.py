@@ -110,3 +110,10 @@ def normalize_whitespace(text):
     return NONBREAKING_SPACE_REGEX.sub(
         " ", LINEBREAK_REGEX.sub(r"\n", text)
     ).strip()
+
+
+def normalize_html(html: str) -> str:
+    return html.replace(
+        '><',
+        '> <',
+    )

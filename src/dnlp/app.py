@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 async def get_app():
-    app = web.Application()
+    app = web.Application(client_max_size=1024 * 1024 * 25)  # 25MB
     app.add_routes(routes)
     return app
 
