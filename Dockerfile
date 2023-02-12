@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.11-slim
 
 # lint it:
 # $ docker run --rm -i hadolint/hadolint < Dockerfile
