@@ -8,7 +8,7 @@ from nltk.data import load as nltk_load
 from trafilatura.core import extract as trafilatura_extract
 from trafilatura.settings import use_config
 
-from dnlp.helpers import abort
+from dnlp.helpers import abort, deduplicate_sentences
 from dnlp.languages import PUNKT_LANGUAGES
 from dnlp.postprocess import remap_prediction
 from dnlp.preprocess import fix_bad_unicode, normalize_html, normalize_whitespace, preprocess_text
@@ -28,7 +28,7 @@ TRAFILATURA_CONFIG = use_config()
 TRAFILATURA_CONFIG.set('DEFAULT', 'EXTRACTION_TIMEOUT', '0')
 
 
-async def tokenize_sentences(request):
+async def tokenize(request):
     post_data = await request.post()
     param_text = post_data.get('text', '')
 
@@ -62,7 +62,7 @@ async def tokenize_sentences(request):
     return json_response(sentences)
 
 
-async def detect_language(request):
+async def detect(request):
     post_data = await request.post()
     param_text = post_data.get('text', '')
 
@@ -116,3 +116,36 @@ async def extract(request):
         return abort('extract error')
 
     return Response(body=result, content_type='text/plain')
+
+
+async def deduplicate(request):
+    json_data = await request.json()  # type: dict
+
+    if not json_data:
+        return abort('Not found `json` in request data')
+
+    sentences = json_data.get('sentences', None)
+    if not sentences:
+        return abort('Not found `sentences` in json')
+
+    if not isinstance(sentences, list):
+        return abort('Param `sentences` is not iterable: must be array of strings in json')
+
+    try:
+        threshold = float(json_data.get('threshold', 0.8))
+    except ValueError:
+        return abort('Param `threshold` is malformed: type is not float')
+
+    loop = asyncio.get_event_loop()
+    dedup_sentences = await loop.run_in_executor(
+        executor=None,
+        func=lambda: deduplicate_sentences(
+            sentences,
+            threshold=threshold,
+        ),
+    )
+
+    if not dedup_sentences:
+        return abort('deduplication error')
+
+    return json_response(dedup_sentences)
