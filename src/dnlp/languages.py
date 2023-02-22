@@ -218,5 +218,5 @@ PUNKT_LANGUAGES = {
 
 PunktLanguagesEnum = Enum(
     'PunktLanguagesEnum',
-    {code: code for code in PUNKT_LANGUAGES.keys()}
+    {code: code for code in PUNKT_LANGUAGES.keys()},
 )

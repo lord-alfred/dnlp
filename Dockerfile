@@ -5,21 +5,20 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11-slim
 
 # hadolint ignore=DL3008
 RUN apt-get update -y && apt-get install -y --no-install-recommends git gcc g++ curl && rm -rf /var/lib/apt/lists/*
-RUN pip install --upgrade pip
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --upgrade pip
 
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# download fasttext pretrained model
-RUN mkdir -p /fasttext && curl -L https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin > /fasttext/lid.176.bin
+# for fasttext pretrained model & nltk tokenizers
 ENV MODEL_PATH=/fasttext/lid.176.bin
-
-# download nltk punkt
-RUN python -c "import nltk; nltk.download('punkt')"
+RUN mkdir -p /fasttext && mkdir -p /root/nltk_data
 
 VOLUME ["/fasttext"]
 VOLUME ["/root/nltk_data"]
 
 COPY ./src/dnlp /app
+COPY ./prestart.sh /app
