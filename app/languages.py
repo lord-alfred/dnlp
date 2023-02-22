@@ -1,3 +1,6 @@
+from enum import Enum
+
+
 # https://fasttext.cc/docs/en/language-identification.html
 # Language Code =>
 #   Language Family
@@ -211,3 +214,9 @@ PUNKT_LANGUAGES = {
     'sv': 'swedish',
     'tr': 'turkish',
 }
+
+
+PunktLanguagesEnum = Enum(
+    'PunktLanguagesEnum',
+    {code: code for code in PUNKT_LANGUAGES.keys()}
+)

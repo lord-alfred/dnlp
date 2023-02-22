@@ -2,14 +2,14 @@ version: '3.7'
 
 services:
   dnlp:
-    restart: always
+#    restart: always
     build: .
     ports:
-      - "9090:9090"
+      - "9090:80"
     expose:
       - 9090
-    logging:
-      driver: "none"
+#    logging:
+#      driver: "none"
     volumes:
       - fasttext:/fasttext
       - nltk_data:/root/nltk_data

@@ -1,10 +1,11 @@
-FROM python:3.11-slim
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.11-slim
 
 # lint it:
 # $ docker run --rm -i hadolint/hadolint < Dockerfile
 
 # hadolint ignore=DL3008
 RUN apt-get update -y && apt-get install -y --no-install-recommends git gcc g++ curl && rm -rf /var/lib/apt/lists/*
+RUN pip install --upgrade pip
 
 WORKDIR /app
 
@@ -21,7 +22,4 @@ RUN python -c "import nltk; nltk.download('punkt')"
 VOLUME ["/fasttext"]
 VOLUME ["/root/nltk_data"]
 
-COPY . /app
-RUN pip install --no-cache-dir -e .
-
-CMD ["dnlp"]
+COPY ./app /app

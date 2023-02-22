@@ -1,7 +1,7 @@
-aiohttp==3.8.4
 -e git+https://github.com/facebookresearch/fastText.git@9ef22d#egg=fastText
 ftfy==6.1.1
 unicodedata2==15.0.0
 nltk==3.8.1
 trafilatura==1.4.1
 Levenshtein==0.20.9
+fastapi==0.92.0
