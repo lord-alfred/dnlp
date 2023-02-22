@@ -22,4 +22,4 @@ RUN python -c "import nltk; nltk.download('punkt')"
 VOLUME ["/fasttext"]
 VOLUME ["/root/nltk_data"]
 
-COPY ./app /app
+COPY ./src/dnlp /app
