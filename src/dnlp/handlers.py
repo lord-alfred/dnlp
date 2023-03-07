@@ -1,151 +1,116 @@
-import asyncio
-import os
-
-from aiohttp.web import json_response
-from aiohttp.web_response import Response
-from fasttext import load_model as ft_load_model
-from nltk.data import load as nltk_load
+from fastapi import APIRouter, Body, Form
+from fastapi.responses import PlainTextResponse
 from trafilatura.core import extract as trafilatura_extract
-from trafilatura.settings import use_config
 
-from dnlp.helpers import abort, deduplicate_sentences
-from dnlp.languages import PUNKT_LANGUAGES
-from dnlp.postprocess import remap_prediction
-from dnlp.preprocess import fix_bad_unicode, normalize_html, normalize_whitespace, preprocess_text
-
-
-# fastText
-MODEL_PATH = os.environ.get('MODEL_PATH', None)
-if not MODEL_PATH:
-    raise RuntimeError('Environment variable "MODEL_PATH" empty')
-FT_MODEL = ft_load_model(MODEL_PATH)
-
-# nltk punkt
-SENT_TOKENIZER = {}
-
-# trafilatura config
-TRAFILATURA_CONFIG = use_config()
-TRAFILATURA_CONFIG.set('DEFAULT', 'EXTRACTION_TIMEOUT', '0')
+from exceptions import HTTPException
+from helpers import (
+    deduplicate_sentences,
+    get_fasttext_model,
+    get_nltk,
+    get_trafilatura_config,
+    remap_fasttext_prediction,
+)
+from languages import PUNKT_LANGUAGES, PunktLanguagesEnum
+from preprocess import fix_bad_unicode, normalize_html, normalize_whitespace, preprocess_text
+from response_examples import deduplicate_responses, detect_responses, extract_responses, tokenize_responses
 
 
-async def tokenize(request):
-    post_data = await request.post()
-    param_text = post_data.get('text', '')
+router = APIRouter()
 
-    param_text = fix_bad_unicode(param_text, normalization='NFC')
-    param_text = normalize_whitespace(param_text)
-    param_text = param_text.strip()
-
-    if not param_text:
-        return abort('empty "text" parameter')
-
-    param_lang = post_data.get('lang', 'en')
-
-    if param_lang in PUNKT_LANGUAGES.keys():
-        if param_lang not in SENT_TOKENIZER.keys():
-            # first tokenizer load (may be slow)
-            SENT_TOKENIZER[param_lang] = nltk_load(f'tokenizers/punkt/{PUNKT_LANGUAGES[param_lang]}.pickle')
-    else:
-        return abort('unknown language code')
-
-    loop = asyncio.get_event_loop()
-    sentences = await loop.run_in_executor(
-        executor=None,
-        func=lambda: SENT_TOKENIZER[param_lang].tokenize(
-            param_text
-        ),
-    )
-
-    if not sentences:
-        return abort('tokenization error')
-
-    return json_response(sentences)
+FASTTEXT_MODEL = get_fasttext_model()
+TRAFILATURA_CONFIG = get_trafilatura_config()
 
 
-async def detect(request):
-    post_data = await request.post()
-    param_text = post_data.get('text', '')
+@router.post(
+    '/detect',
+    summary='Определение языка текста',
+    responses=detect_responses,
+)
+def detect(
+    text: str = Form(description='Текст для определения языка'),
+    count: int = Form(description='Количество результатов', default=3),
+    threshold: float = Form(description='Пороговое значение', ge=0.0, le=1.0, default=0.01),
+):
 
-    # preprocessing (normalization)
-    param_text = preprocess_text(param_text)
-    if not param_text:
-        return abort('empty "text" parameter')
+    # Предобработка текста (удаление ссылок, переносов строк, понижение регистра и тд).
+    # Может аффектить на скорость из-за регулярок.
+    # В будущем можно сделать отключение части обработчиков (после бенча на сколько это вообще проблема).
+    text = preprocess_text(text)
 
-    param_count = post_data.get('count', 3)
-    param_count = int(param_count)
+    if not text:
+        raise HTTPException(detail='Content of parameter `text` is empty after preprocessing')
 
-    loop = asyncio.get_event_loop()
-    prediction = await loop.run_in_executor(
-        executor=None,
-        func=lambda: FT_MODEL.predict(
-            param_text,
-            k=param_count,
-            threshold=0.01
-        ),
-    )
+    prediction = FASTTEXT_MODEL.predict(text, k=count, threshold=threshold)
 
     if not prediction:
-        return abort('detection error')
+        raise HTTPException(detail='Detection error')
 
-    return json_response(
-        remap_prediction(prediction)
-    )
+    return remap_fasttext_prediction(prediction)
 
 
-async def extract(request):
-    post_data = await request.post()
-    param_html = post_data.get('html', '')
+@router.post(
+    '/tokenize',
+    summary='Разделение текста на предложения',
+    responses=tokenize_responses,
+)
+def tokenize(
+    text: str = Form(description='Текст для разбивки на предложения'),
+    lang: PunktLanguagesEnum = Form(description='Язык текста', default=PunktLanguagesEnum.en),
+):
 
-    if not param_html:
-        return abort('empty "html" parameter')
+    text = fix_bad_unicode(text, normalization='NFC')
+    text = normalize_whitespace(text)
+    text = text.strip()
 
-    param_html = normalize_html(param_html)
+    if not text:
+        raise HTTPException(detail='Content of parameter `text` is empty after preprocessing')
 
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(
-        executor=None,
-        func=lambda: trafilatura_extract(
-            param_html,
-            favor_precision=True,
-            include_comments=False,
-            config=TRAFILATURA_CONFIG,
-        ),
-    )
+    nltk = get_nltk(PUNKT_LANGUAGES[lang.value])
+    sentences = nltk.tokenize(text)
 
-    if not result:
-        return abort('extract error')
-
-    return Response(body=result, content_type='text/plain')
-
-
-async def deduplicate(request):
-    json_data = await request.json()  # type: dict
-
-    if not json_data:
-        return abort('Not found `json` in request data')
-
-    sentences = json_data.get('sentences', None)
     if not sentences:
-        return abort('Not found `sentences` in json')
+        raise HTTPException(detail='Tokenization error')
 
-    if not isinstance(sentences, list):
-        return abort('Param `sentences` is not iterable: must be array of strings in json')
+    return sentences
 
-    try:
-        threshold = float(json_data.get('threshold', 0.8))
-    except ValueError:
-        return abort('Param `threshold` is malformed: type is not float')
 
-    loop = asyncio.get_event_loop()
-    dedup_sentences = await loop.run_in_executor(
-        executor=None,
-        func=lambda: deduplicate_sentences(
-            sentences,
-            threshold=threshold,
-        ),
+@router.post(
+    '/extract',
+    summary='Получение основного содержимого из html документа',
+    response_class=PlainTextResponse,
+    responses=extract_responses,
+)
+def extract(
+    html: str = Form(description='Содержимое HTML-страницы, закодированное с помощью `urlencode` функции'),
+):
+
+    html = normalize_html(html)
+
+    text = trafilatura_extract(
+        html,
+        favor_precision=True,
+        include_comments=False,
+        config=TRAFILATURA_CONFIG,
     )
+
+    if not text:
+        raise HTTPException(detail='Extraction error')
+
+    return text
+
+
+@router.post(
+    '/deduplicate',
+    summary='Удаление нечётких дублей приложений',
+    responses=deduplicate_responses,
+)
+def deduplicate(
+    sentences: list[str] = Body(description='Массив предложений'),
+    threshold: float = Body(description='Пороговое значение', ge=0.0, le=1.0, default=0.8),
+):
+    dedup_sentences = deduplicate_sentences(sentences, threshold)
 
     if not dedup_sentences:
-        return abort('deduplication error')
+        raise HTTPException(detail='Deduplication error')
 
-    return json_response(dedup_sentences)
+    return dedup_sentences
