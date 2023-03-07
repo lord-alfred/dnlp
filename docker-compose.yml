@@ -14,6 +14,7 @@ services:
     environment:
       LOG_LEVEL: "warning"
       ACCESS_LOG: ""
+      GUNICORN_CMD_ARGS: "--max-requests=1000 max_requests_jitter=100"
 
 volumes:
     fasttext:
